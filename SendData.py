@@ -1,7 +1,7 @@
 import httpx
-from numpy.ma import count
+import pandas as pd 
 
-async def sendMetric(key: string, , name: string, df: DataFrame) -> int:
+async def sendMetric(key: str, name: str, df: pd.DataFrame) -> int:
     """send metric data to new relic"""
     headers = {
         "Content-Type":  "application/json",

@@ -50,18 +50,17 @@ class Forecast:
         self.plot_forecast.append(future)
         return forecast
 
-    def plot(self, test_data: DataFrame, train_data: DataFrame):
+    def plot(self, test_data: DataFrame, train_data: DataFrame, test_data_forecast : DataFrame, train_data_forecast : DataFrame):
         test_data = test_data.set_index("ds")
         train_data = train_data.set_index("ds")
         self.ax[0].clear()
         self.ax[1].clear()
         self.ax[2].clear()
-        for data in self.plot_forecast:
-            data.reset_index()
-            self.ax[0].plot(data.iloc[:, -1], label="{}".format(data.columns[-1]))
+        self.ax[0].plot(train_data_forecast.iloc[:, -1], label="{}".format(test_data_forecast.columns[-1]))
+        self.ax[0].plot(test_data_forecast.iloc[:, -1], label="{}".format(train_data_forecast.columns[-1]))
 
-        self.ax[1].plot(test_data)
-        self.ax[2].plot(train_data)
+        self.ax[1].plot(train_data)
+        self.ax[2].plot(test_data)
         self.ax[0].legend()
         self.ax[0].grid()
         self.ax[0].autoscale_view()

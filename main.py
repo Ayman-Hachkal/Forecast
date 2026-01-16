@@ -1,8 +1,7 @@
 import asyncio
 import os
-from time import sleep
+from processData import Process
 import readenv
-from forecasting import Forecast
 import datarequest 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,85 +9,62 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     readenv.load_env()
-    AOE_KEY= os.getenv("AOE_KEY")
     WESTELM_KEY= os.getenv("WESTELM_KEY")
-    print(WESTELM_KEY)
+    AOE_KEY = os.getenv("AOE_KEY")
     URL ="https://api.newrelic.com/graphql" 
 
+    time = "25200"
 
-    # Process data for WE cart updates
-    #dfTransaction = pd.DataFrame(asyncio.run(datarequest.weGetTransactonVolume(URL, WESTELM_KEY)))
-    #dfTransaction = dfTransaction.drop(dfTransaction.columns.difference(["ds", "y"]), axis=1)
-    #forecast.forecast(dfTransaction, "TransactionsThroughput")
 
-    #dfUpdateCart = pd.DataFrame(asyncio.run(datarequest.we_request_cart(URL, WESTELM_KEY)))
-    #dfUpdateCart = dfUpdateCart.drop(dfUpdateCart.columns.difference(["ds", "y"]), axis=1)
-    #forecast.forecast(dfUpdateCart, "UpdateCart")
+    # Process AOE Transactions
+    AOE_process_transaction = Process()
+    dfAOETransaction = pd.DataFrame(asyncio.run(datarequest.AOEGetTransactionThroughput(URL, AOE_KEY, time)))
+    AOE_process_transaction.processDataFrame(dfAOETransaction)
+    
+    # Process AOE Login 
+    AOE_process_login= Process()
+    dfAOELogin = pd.DataFrame(asyncio.run(datarequest.AOELogin(URL, AOE_KEY, time)))
+    AOE_process_login.processDataFrame(dfAOELogin)
 
-    #dfPlaceOrder = pd.DataFrame(asyncio.run(datarequest.WePlaceOrder(URL, WESTELM_KEY)))
-    #dfPlaceOrder = dfPlaceOrder.drop(dfPlaceOrder.columns.difference(["ds", "y"]), axis=1)
-    #forecast.forecast(dfPlaceOrder, "PlaceOrder")
+    # Process AOE cart updates
+    AOE_process_update = Process()
+    dfAOEUpdateCart = pd.DataFrame(asyncio.run(datarequest.AOEUpdateCart(URL, AOE_KEY, time)))
+    AOE_process_update.processDataFrame(dfAOEUpdateCart)
 
-    #dfAOETransaction = pd.DataFrame(asyncio.run(datarequest.AOEGetTransactionThroughput(URL, AOE_KEY)))
-    #dfAOETransaction = dfAOETransaction.drop(dfAOETransaction.columns.difference(["ds", "y"]), axis=1)
-    #dfAOETransaction = forecast.forecast(dfAOETransaction, "AOE Transaction Throughput ")
+    # Process AOE place order
+    AOE_process_placeorder = Process()
+    dfAOEPlaceOrder = pd.DataFrame(asyncio.run(datarequest.AOEPlaceOrder(URL, AOE_KEY, time)))
+    AOE_process_placeorder.processDataFrame(dfAOEPlaceOrder)
 
-    forecast_AOE = Forecast()
-
-    dfAOELogin = pd.DataFrame(asyncio.run(datarequest.AOELogin(URL, AOE_KEY)))
-    dfAOELogin = dfAOELogin.drop(dfAOELogin.columns.difference(["ds", "y"]), axis=1)
-
-    train_test_ratio = 0.8
-    split = round((len(dfAOELogin) * 0.8))
-
-    dfAOELoginTrain = dfAOELogin[:split]
-    dfAOELoginTrainForecast = forecast_AOE.forecast(dfAOELoginTrain, "AOE Train Login ")
-
-    dfAOELoginTest  = dfAOELogin[split:]
-    dfAOELoginTestForecast = forecast_AOE.forecast(dfAOELoginTest, "AOE Test Login")
-
-    #dfAOEUpdateCart = pd.DataFrame(asyncio.run(datarequest.AOEUpdateCart(URL, AOE_KEY)))
-    #dfAOEUpdateCart = dfAOEUpdateCart.drop(dfAOEUpdateCart.columns.difference(["ds", "y"]), axis=1)
-    #dfAOEUpdateCart = forecast.forecast(dfAOEUpdateCart, "AOE Update Cart ")
-
-    #dfAOEPlaceOrder = pd.DataFrame(asyncio.run(datarequest.AOEPlaceOrder(URL, AOE_KEY)))
-    #dfAOEPlaceOrder = dfAOEPlaceOrder.drop(dfAOEPlaceOrder.columns.difference(["ds", "y"]), axis=1)
-    #dfAOEPlaceOrder = forecast.forecast(dfAOEPlaceOrder, "AOE Place order ")
-
-    forecast_AOE.checkAnomoly(dfAOELoginTrain, dfAOELoginTrainForecast, dfAOELoginTest, dfAOELoginTestForecast)
-    forecast_AOE.plot(dfAOELoginTest, dfAOELoginTrain)
+    update_time = "1"
 
     while True: 
         plt.pause(60)
 
+        # Update AOE Transaction
+        dfAOETransactionUpdate = pd.DataFrame(asyncio.run(datarequest.AOEGetTransactionThroughput(URL, AOE_KEY, update_time)))
+        dfAOETransaction = pd.concat([dfAOETransaction, dfAOETransactionUpdate])
+        # Process and store Transaction Data
+        AOE_process_transaction.processDataFrame(dfAOETransaction)
+        AOE_process_transaction.storeData(dfAOETransaction, "AOETransaction")
+
         # Update the login data with new metrics
-        dfAOELoginUpdate = pd.DataFrame(asyncio.run(datarequest.AOELoginOneMinute(URL, AOE_KEY)))
-        print("--------------------------UPDATE DataFrame-----------------------------------")
-        print(dfAOELoginUpdate)
+        dfAOELoginUpdate = pd.DataFrame(asyncio.run(datarequest.AOELogin(URL, AOE_KEY, update_time)))
         dfAOELogin = pd.concat([dfAOELogin, dfAOELoginUpdate])
+        # Process Data, Store
+        AOE_process_login.processDataFrame(dfAOELogin)
+        AOE_process_login.storeData(dfAOELogin, "AOELogin")
 
-        # split the data appropratily
-        train_test_ratio = 0.8
-        split = round((len(dfAOELogin) * 0.8))
-        dfAOELoginTrain = dfAOELogin[:split]
-        dfAOELoginTest  = dfAOELogin[split:]
+        # Update AOE cart updates 
+        dfAOEUpdateCartUpdate = pd.DataFrame(asyncio.run(datarequest.AOEUpdateCart(URL, AOE_KEY, update_time)))
+        dfAOEUpdateCart = pd.concat([dfAOEUpdateCart, dfAOEUpdateCartUpdate])
+        # Process Data, Store
+        AOE_process_update.processDataFrame(dfAOEUpdateCart)
+        AOE_process_update.storeData(dfAOEUpdateCart, "AOEUpdateCart")
 
-        # repredict the forecast for the new data and the testing data
-        dfAOELoginTrainForecast = forecast_AOE.forecast(dfAOELoginTrain, "AOE Train Login ")
-        dfAOELoginTestForecast = forecast_AOE.forecast(dfAOELoginTest, "AOE Test Login")
-
-        # Check anomalies for both, then plot
-        forecast_AOE.checkAnomoly(dfAOELoginTrain, dfAOELoginTrainForecast, dfAOELoginTest, dfAOELoginTestForecast)
-        forecast_AOE.plot(dfAOELoginTest, dfAOELoginTrain)
-
-        
-        
-        
-
-
-
-    
-        
-    
-
-
+        # Update AOE place order
+        dfAOEPlaceOrderUpdate = pd.DataFrame(asyncio.run(datarequest.AOEPlaceOrder(URL, AOE_KEY, update_time)))
+        dfAOEPlaceOrder = pd.concat([dfAOEPlaceOrder, dfAOEPlaceOrderUpdate])
+        # Process Data, Store
+        AOE_process_placeorder.processDataFrame(dfAOEPlaceOrder)
+        AOE_process_placeorder.storeData(dfAOEPlaceOrder, "AOEPlaceOrder")
