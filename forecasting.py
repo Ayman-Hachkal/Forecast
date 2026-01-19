@@ -10,10 +10,6 @@ class Forecast:
         self.fig, self.ax = plt.subplots(4, 1)
         self.plot_forecast = []
         
-
-    def format_data(self, data: dict) -> str | None:  
-        pass
-
     def average_year(self, data: DataFrame) -> DataFrame:  
         x = np.array(data.iloc[:, 1].tolist())
         for offset in range(0, len(data), 12):
@@ -58,6 +54,9 @@ class Forecast:
         self.ax[2].clear()
         self.ax[0].plot(train_data_forecast.iloc[:, -1], label="{}".format(test_data_forecast.columns[-1]))
         self.ax[0].plot(test_data_forecast.iloc[:, -1], label="{}".format(train_data_forecast.columns[-1]))
+
+        for future in self.plot_forecast:
+            self.ax[0].plot(future.iloc[:, -1], label="{}".format(future.columns[-1]))
 
         self.ax[1].plot(train_data)
         self.ax[2].plot(test_data)

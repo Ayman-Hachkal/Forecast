@@ -38,7 +38,7 @@ async def AOELogin(url: str, key, time: str):
             df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
             df = df.rename(columns={'timestamp' :'ds', 'duration' :'y'})
             df = df.drop(df.columns.difference(["ds", "y"]), axis=1)
-            df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=False, axis=0)).count()
+            df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=False, axis=0)).mean()
             df = df.fillna(0).reset_index()
             df = df.reset_index()
             return df
@@ -80,7 +80,7 @@ async def AOEUpdateCart(url: str, key, time: str):
             df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
             df = df.rename(columns={'timestamp' :'ds', 'duration' :'y'})
             df = df.drop(df.columns.difference(["ds", "y"]), axis=1)
-            df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=False, axis=0)).count()
+            df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=False, axis=0)).mean()
             df = df.fillna(0).reset_index()
             df = df.reset_index()
             return df
@@ -123,7 +123,7 @@ async def AOEPlaceOrder(url: str, key, time : str):
             df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
             df = df.rename(columns={'timestamp' :'ds', 'duration' :'y'})
             df = df.drop(df.columns.difference(["ds", "y"]), axis=1)
-            df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=False, axis=0)).count()
+            df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=False, axis=0)).mean()
             df = df.fillna(0).reset_index()
             df = df.reset_index()
             return df
@@ -166,7 +166,7 @@ async def AOEGetTransactionThroughput(url: str, key, time: str):
             df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
             df = df.rename(columns={'timestamp' :'ds', 'newrelic.resourceConsumption.currentValue.count' :'y'})
             df = df.drop(df.columns.difference(["ds", "y"]), axis=1)
-            df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=False, axis=0)).count()
+            df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=False, axis=0)).sum()
             df = df.fillna(0).reset_index()
             df = df.reset_index()
             return df
@@ -208,7 +208,7 @@ async def AOEGetCart(url: str, key: str, time: str):
             df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
             df = df.rename(columns={'timestamp' :'ds', 'duration' :'y'})
             df = df.drop(df.columns.difference(["ds", "y"]), axis=1)
-            df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=False, axis=0)).count()
+            df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=False, axis=0)).mean()
             df = df.fillna(0).reset_index()
             df = df.reset_index()
             return df

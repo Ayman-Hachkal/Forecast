@@ -8,19 +8,16 @@ async def sendMetric(key: str, name: str, df: pd.DataFrame) -> int:
         "API-Key": key
     }
 
-    metrics = []
+    df = df.head(1)
 
-    for record in df:
-        metric = {
-            "name"  : f"forecast {name}",
-            "type"  : "count",
-            "value" : record['y'],
-            "timestamp" : record['ds'],
+    metric = {
+    "name"  : f"forecast {name}",
+    "type"  : "count",
+    "value" : df['y'],
+    "timestamp" : df['ds'],
+    }
 
-        }
-        metrics.append(metric)
-
-    body = { "metrics" : metrics}
+    body = { "metrics" : metric }
     async with httpx.AsyncClient() as client:
             response = await client.request(  method = "POST",
                                                         url = "https://metric-api.newrelic.com/metric/v1",
