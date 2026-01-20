@@ -12,10 +12,10 @@ class Process:
         split = int(len(df) * 0.8)
 
         dfTrain = df[:split]
-        dfTrainForecast = self.forecast.forecast(dfTrain, "AOE Train Login ")
+        dfTrainForecast = self.forecast.forecast(dfTrain)
 
         dfTest = df[split:]
-        dfTestForecast = self.forecast.forecast(dfTest, "AOE Test Login")
+        dfTestForecast = self.forecast.forecast(dfTest)
 
         self.forecast.checkAnomoly(dfTrain, dfTrainForecast, dfTest, dfTestForecast)
         self.forecast.plot(dfTest, dfTrain, dfTestForecast, dfTrainForecast)
