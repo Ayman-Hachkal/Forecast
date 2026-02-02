@@ -3,8 +3,8 @@ import pandas as pd
 from forecasting import Forecast 
 
 class Process:
-    def __init__(self):
-        self.forecast = Forecast()
+    def __init__(self, name : str):
+        self.forecast = Forecast(name)
 
     def processDataFrame(self, df : pd.DataFrame):
         df = df.drop(df.columns.difference(["ds", "y"]), axis=1)
@@ -22,6 +22,10 @@ class Process:
 
     def storeData(self, df : pd.DataFrame, name : str): 
         df.to_csv(f"Data/{name}data.csv")
+
+    def readData(self, name : str): 
+        df = pd.DataFrame(pd.read_csv(f"Data/{name}data.csv"))
+        return df
 
 
 

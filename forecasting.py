@@ -14,9 +14,10 @@ class Forecast:
         ax: Array of Matplotlib axes for different plot components.
         plot_forecast: List to store forecast DataFrames for visualization.
     """
-    def __init__(self) -> None:
+    def __init__(self, name : str) -> None:
         """Initializes the Forecast class with a 4x1 subplot layout."""
         self.fig, self.ax = plt.subplots(4, 1)
+        self.fig.suptitle(name)
         self.plot_forecast = []
 
     def forecast(self, df) -> DataFrame:
@@ -36,7 +37,6 @@ class Forecast:
         # Generate predictions for the training data
         forecast = m.predict(df)
         forecast = forecast.set_index("ds")
-        self.plot_forecast.append(forecast)
         print(forecast)
         # Create future dataframe for 1100 minutes and predict
         future = m.make_future_dataframe(periods=1100, freq="min", include_history=False)
@@ -64,12 +64,12 @@ class Forecast:
         self.ax[2].clear()
         
         # Plot training and test predictions
-        self.ax[0].plot(train_data_forecast.iloc[:, -1], label="{}".format(test_data_forecast.columns[-1]))
-        self.ax[0].plot(test_data_forecast.iloc[:, -1], label="{}".format(train_data_forecast.columns[-1]))
+        self.ax[0].plot(train_data_forecast.iloc[:, -1], label="Train Data {}".format(test_data_forecast.columns[-1]))
+        self.ax[0].plot(test_data_forecast.iloc[:, -1], label="Test Data {}".format(train_data_forecast.columns[-1]))
 
         # Plot all stored forecasts in the shared axis
         for future in self.plot_forecast:
-            self.ax[0].plot(future.iloc[:, -1], label="{}".format(future.columns[-1]))
+            self.ax[0].plot(future.iloc[:, -1], label="Future Prediction {}".format(future.columns[-1]))
 
         # Plot raw train and test data
         self.ax[1].plot(train_data)
@@ -98,10 +98,22 @@ class Forecast:
 
         # Calculate Root Mean Square Error (RMSE) for train and test sets
         train_RMSE = np.sqrt(mean_squared_error(train_data['y'], train_data_forecast['yhat']))
+        train_standard_deviation = np.std(train_data['y'])
+        train_mean = np.mean(train_data['y'])
+
+        train_range = (np.max(np.array(train_data['y'].values)) - np.min(np.array(train_data['y'].values)))
+
         test_RMSE = np.sqrt(mean_squared_error(test_data['y'], test_data_forecast['yhat']))
-        
+        test_standard_deviation = np.std(test_data['y'] )
+
         # Determine the peak value in the test data for context
-        test_range = (np.max(np.array(test_data['y'].values)))
+        test_range = (np.max(np.array(test_data['y'].values)) - np.min(np.array(test_data['y'].values)))
+
+        test_mean = np.mean(train_data['y'])
+
+        train_NRMSE = train_RMSE / train_range 
+        test_NRMSE = test_RMSE / test_range 
+        
         
         # Calculate Mean Absolute Percentage Error (MAPE)
         mape = np.mean(np.abs((np.array(test_data['y'].values) - np.array(test_data_forecast['yhat'].values)) / np.array(test_data['y'].notnull().values))) * 100
@@ -109,13 +121,17 @@ class Forecast:
 
         data = {
             "train_RMSE"    : train_RMSE, 
+            "train_NRMSE"   : train_NRMSE,
             "test_RMSE"     : test_RMSE,
+            "test_NRMSE"    : test_NRMSE,
             "mape"          : mape,
             "range"         : test_range
         }
 
         print("Train RMSE: ", train_RMSE)
+        print("Train NRMSE: ", train_NRMSE)
         print("Test RMSE: ", test_RMSE)
+        print("test NRMSE: ", test_NRMSE)
         print("Test MAPE: ", mape)
         
         # Visualize metrics in a bar chart

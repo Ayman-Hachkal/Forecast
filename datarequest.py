@@ -2,6 +2,30 @@ import json
 import httpx
 import pandas as pd
 
+async def Request(url, headers, query_payload, clean_data):
+    async with httpx.AsyncClient() as client:
+        try: 
+            response = await client.request(method = "POST",
+                                                        url = url,
+                                                        headers = headers,
+                                                        json = query_payload)
+            data = response.json()
+            cleaned = json.dumps(data, indent=4, sort_keys=True)
+            parsed = json.loads(cleaned)
+            # Put it into a dataframe 
+            df = pd.json_normalize(parsed['data']['actor']['account']['nrql']['results'])
+            # Convert from epoch to date_time
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+            df = df.rename(columns={'timestamp' : 'ds', clean_data :'y'})
+            df = df.drop(df.columns.difference(["ds", "y"]), axis=1)
+            df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=False, axis=0)).mean()
+            df = df.fillna(0).reset_index()
+            df = df.reset_index()
+            return df
+        except Exception: 
+            print(Exception)
+            return pd.DataFrame()
+
 
 async def AOELogin(url: str, key, time: str):
     """requesting new relic aoe for login, add cart, order, and throughput"""
@@ -23,27 +47,7 @@ async def AOELogin(url: str, key, time: str):
         "variables": "" # or {} depending on what the API expects for empty
 
     }    
-    async with httpx.AsyncClient() as client:
-        try: 
-            response = await client.request(  method = "POST",
-                                                        url = url,
-                                                        headers = headers,
-                                                        json = query_payload)
-            data = response.json()
-            cleaned = json.dumps(data, indent=4, sort_keys=True)
-            parsed = json.loads(cleaned)
-            # Put it into a dataframe 
-            df = pd.json_normalize(parsed['data']['actor']['account']['nrql']['results'])
-            # Convert from epoch to date_time
-            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-            df = df.rename(columns={'timestamp' :'ds', 'duration' :'y'})
-            df = df.drop(df.columns.difference(["ds", "y"]), axis=1)
-            df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=False, axis=0)).mean()
-            df = df.fillna(0).reset_index()
-            df = df.reset_index()
-            return df
-        except Exception: 
-            return pd.DataFrame()
+    return await Request(url, headers, query_payload, 'duration')
 
 async def AOEUpdateCart(url: str, key, time: str):
     """requesting new relic aoe for login, add cart, order, and throughput"""
@@ -65,27 +69,7 @@ async def AOEUpdateCart(url: str, key, time: str):
         "variables": "" # or {} depending on what the API expects for empty
 
     }    
-    async with httpx.AsyncClient() as client:
-        try: 
-            response = await client.request(  method = "POST",
-                                                        url = url,
-                                                        headers = headers,
-                                                        json = query_payload)
-            data = response.json()
-            cleaned = json.dumps(data, indent=4, sort_keys=True)
-            parsed = json.loads(cleaned)
-            # Put it into a dataframe 
-            df = pd.json_normalize(parsed['data']['actor']['account']['nrql']['results'])
-            # Convert from epoch to date_time
-            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-            df = df.rename(columns={'timestamp' :'ds', 'duration' :'y'})
-            df = df.drop(df.columns.difference(["ds", "y"]), axis=1)
-            df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=False, axis=0)).mean()
-            df = df.fillna(0).reset_index()
-            df = df.reset_index()
-            return df
-        except Exception: 
-            return pd.DataFrame()
+    return await Request(url, headers, query_payload, 'duration')
 
 
 async def AOEPlaceOrder(url: str, key, time : str):
@@ -108,27 +92,7 @@ async def AOEPlaceOrder(url: str, key, time : str):
         "variables": "" # or {} depending on what the API expects for empty
 
     }    
-    async with httpx.AsyncClient() as client:
-        try: 
-            response = await client.request(  method = "POST",
-                                                        url = url,
-                                                        headers = headers,
-                                                        json = query_payload)
-            data = response.json()
-            cleaned = json.dumps(data, indent=4, sort_keys=True)
-            parsed = json.loads(cleaned)
-            # Put it into a dataframe 
-            df = pd.json_normalize(parsed['data']['actor']['account']['nrql']['results'])
-            # Convert from epoch to date_time
-            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-            df = df.rename(columns={'timestamp' :'ds', 'duration' :'y'})
-            df = df.drop(df.columns.difference(["ds", "y"]), axis=1)
-            df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=False, axis=0)).mean()
-            df = df.fillna(0).reset_index()
-            df = df.reset_index()
-            return df
-        except Exception: 
-            return pd.DataFrame()
+    return await Request(url, headers, query_payload, 'duration')
 
 
 async def AOEGetTransactionThroughput(url: str, key, time: str):
@@ -193,25 +157,4 @@ async def AOEGetCart(url: str, key: str, time: str):
         "variables": "" # or {} depending on what the API expects for empty
 
     }    
-    async with httpx.AsyncClient() as client:
-        try: 
-            response = await client.request(  method = "POST",
-                                                        url = url,
-                                                        headers = headers,
-                                                        json = query_payload)
-            data = response.json()
-            cleaned = json.dumps(data, indent=4, sort_keys=True)
-            parsed = json.loads(cleaned)
-            # Put it into a dataframe 
-            df = pd.json_normalize(parsed['data']['actor']['account']['nrql']['results'])
-            # Convert from epoch to date_time
-            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-            df = df.rename(columns={'timestamp' :'ds', 'duration' :'y'})
-            df = df.drop(df.columns.difference(["ds", "y"]), axis=1)
-            df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=False, axis=0)).mean()
-            df = df.fillna(0).reset_index()
-            df = df.reset_index()
-            return df
-        except Exception: 
-            return pd.DataFrame()
-
+    return await Request(url, headers, query_payload, 'duration')
