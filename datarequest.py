@@ -1,3 +1,4 @@
+import asyncio
 import json
 import httpx
 import pandas as pd
@@ -23,7 +24,6 @@ async def Request(url, headers, query_payload, clean_data):
             df = df.reset_index()
             return df
         except Exception: 
-            print(Exception)
             return pd.DataFrame()
 
 
@@ -34,20 +34,31 @@ async def AOELogin(url: str, key, time: str):
         "API-Key": key
     }
 
-    query_payload = {
-        "query": """{
-          actor {
-            account(id: 1927050) {
-              nrql(query: "FROM Transaction SELECT * WHERE name = 'WebTransaction/Action/Webapi/Rest/Alshaya\\\\\\SocialSignIn\\\\\\Api\\\\\\CustomerManagementInterface/createCustomerTokenBySocialDetail' or name = 'WebTransaction/Action/Webapi/Rest/Magento\\\\\\Integration\\\\\\Api\\\\\\CustomerTokenServiceInterface/createCustomerAccessToken' LIMIT MAX SINCE """ + time + """ minute ago", async: true) {
-                results
+    queries = []
+    until_time = 0 
+    increment = 60
+    since_time = increment
+    
+    while (since_time < int(time)):
+        query_payload = {
+            "query": """{
+              actor {
+                account(id: 1927050) {
+                  nrql(query: "FROM Transaction SELECT * WHERE name = 'WebTransaction/Action/Webapi/Rest/Alshaya\\\\\\SocialSignIn\\\\\\Api\\\\\\CustomerManagementInterface/createCustomerTokenBySocialDetail' or name = 'WebTransaction/Action/Webapi/Rest/Magento\\\\\\Integration\\\\\\Api\\\\\\CustomerTokenServiceInterface/createCustomerAccessToken' LIMIT MAX SINCE """ + str(since_time)+ """ minute ago UNTIL """ + str(until_time) + """ minute ago", async: true) {
+                    results
+                  }
+                }
               }
-            }
-          }
-        }""",
-        "variables": "" # or {} depending on what the API expects for empty
+            }""",
+            "variables": "" # or {} depending on what the API expects for empty
+        }    
+        queries.append(Request(url, headers, query_payload, 'duration'))
+        since_time += increment
+        until_time += increment
 
-    }    
-    return await Request(url, headers, query_payload, 'duration')
+    results = await asyncio.gather(*queries)
+    df = pd.concat(results)
+    return df
 
 async def AOEUpdateCart(url: str, key, time: str):
     """requesting new relic aoe for login, add cart, order, and throughput"""
@@ -146,8 +157,7 @@ async def AOEGetCart(url: str, key: str, time: str):
 
     query_payload = {
         "query": """{
-          actor {
-            account(id: 1927050) {
+          actor { account(id: 1927050) {
               nrql(query: "FROM Transaction SELECT * WHERE name = 'WebTransaction/Action/Webapi/Rest/Acquia\\\\\\CommerceManager\\\\\\Api\\\\\\CartManagementInterface/getCartForGuest' or name = 'WebTransaction/Action/Webapi/Rest/Acquia\\\\\\CommerceManager\\\\\\Api\\\\\\CartManagementInterface/getCartForCustomer' LIMIT MAX SINCE """ + time + """ minute ago", async: true) {
                 results
               }

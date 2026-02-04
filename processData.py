@@ -8,13 +8,21 @@ class Process:
 
     def processDataFrame(self, df : pd.DataFrame):
         df = df.drop(df.columns.difference(["ds", "y"]), axis=1)
+        print("____________________________________________________")
+        print(df)
+        print("____________________________________________________")
 
-        split = int(len(df) * 0.8)
+        split = int(len(df) * 0.2)
 
-        dfTrain = df[:split]
+        print(split)
+        dfTrain = df[split:]
+        print("____________________________________________________")
+        print("DF TRAIN")
+        print(dfTrain)
+        print("____________________________________________________")
         dfTrainForecast = self.forecast.forecast(dfTrain)
 
-        dfTest = df[split:]
+        dfTest = df[:split]
         dfTestForecast = self.forecast.forecast(dfTest)
 
         self.forecast.checkAnomoly(dfTrain, dfTrainForecast, dfTest, dfTestForecast)
