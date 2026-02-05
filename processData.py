@@ -6,7 +6,10 @@ class Process:
     def __init__(self, name : str):
         self.forecast = Forecast(name)
 
-    def processDataFrame(self, df : pd.DataFrame):
+    async def processDataFrame(self, df : pd.DataFrame):
+
+        maxsize = 100000 
+        df = df.head(maxsize)
         df = df.drop(df.columns.difference(["ds", "y"]), axis=1)
         print("____________________________________________________")
         print(df)
@@ -20,9 +23,13 @@ class Process:
         print("DF TRAIN")
         print(dfTrain)
         print("____________________________________________________")
-        dfTrainForecast = self.forecast.forecast(dfTrain)
-
         dfTest = df[:split]
+        print("____________________________________________________")
+        print("DF TEST")
+        print(dfTest)
+        print("____________________________________________________")
+
+        dfTrainForecast = self.forecast.forecast(dfTrain)
         dfTestForecast = self.forecast.forecast(dfTest)
 
         self.forecast.checkAnomoly(dfTrain, dfTrainForecast, dfTest, dfTestForecast)

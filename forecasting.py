@@ -39,7 +39,7 @@ class Forecast:
         forecast = forecast.set_index("ds")
         print(forecast)
         # Create future dataframe for 1100 minutes and predict
-        future = m.make_future_dataframe(periods=1100, freq="min", include_history=False)
+        future = m.make_future_dataframe(periods=1440, freq="min", include_history=False)
         future = m.predict(future)
         future = future.set_index("ds")
         self.plot_forecast.append(future)
