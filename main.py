@@ -9,14 +9,18 @@ import matplotlib.pyplot as plt
 
 
 
-async def updateData(AOELoginGroup, AOEUpdateCartGroup = None, AOEPlaceOrderGroup = None, AOETransactionGroup = None):
+async def updateData(AOELoginGroup = None, AOEUpdateCartGroup = None, AOEPlaceOrderGroup = None, AOETransactionGroup = None):
         tasks = []
         try: 
-            #tasks.append(AOETransactionGroup[1].processDataFrame(AOETransactionGroup[0]))
-            tasks.append(AOELoginGroup[1].processDataFrame(AOELoginGroup[0]))
-            #tasks.append(AOEUpdateCartGroup[1].processDataFrame(AOEUpdateCartGroup[0]))
-            #tasks.append(AOEPlaceOrderGroup[1].processDataFrame(AOEPlaceOrderGroup[0]))
-            tasks = asyncio.gather(*tasks)
+            if AOETransactionGroup != None:
+                tasks.append(AOETransactionGroup[1].processDataFrame(AOETransactionGroup[0]))
+            if AOELoginGroup != None:
+                tasks.append(AOELoginGroup[1].processDataFrame(AOELoginGroup[0]))
+            if AOEUpdateCartGroup != None:
+                tasks.append(AOEUpdateCartGroup[1].processDataFrame(AOEUpdateCartGroup[0]))
+            if AOEPlaceOrderGroup != None:
+                tasks.append(AOEPlaceOrderGroup[1].processDataFrame(AOEPlaceOrderGroup[0]))
+            await asyncio.gather(*tasks)
         except Exception as e:
             print(e)
 
@@ -26,64 +30,68 @@ if __name__ == "__main__":
     AOE_KEY = os.getenv("AOE_KEY")
     URL ="https://api.newrelic.com/graphql" 
 
-    time = "21600"
-    UPDATE_TIME = "60"
+    time = "43200"
+    UPDATE_TIME = 3600
 
-    #AOE_process_transaction = Process("AOE Transactions")
+    AOE_process_transaction = Process("AOE Transactions")
     AOE_process_login= Process("AOE Login")
-    #AOE_process_update = Process("AOE Cart Updates")
-    #AOE_process_placeorder = Process("AOE Place Order")
+    AOE_process_update = Process("AOE Cart Updates")
+    AOE_process_placeorder = Process("AOE Place Order")
 
     # Process AOE Transactions
-    #dfAOETransaction = pd.DataFrame(asyncio.run(datarequest.AOEGetTransactionThroughput(URL, AOE_KEY, time)))
-    #AOETransactionGroup = [dfAOETransaction, AOE_process_transaction]
+    print("parsing transaction data")
+    dfAOETransaction = pd.DataFrame(asyncio.run(datarequest.AOEGetTransactionThroughput(URL, AOE_KEY, time)))
+    AOETransactionGroup = [dfAOETransaction, AOE_process_transaction]
+    print("parsed transaction data")
     
     # Process AOE Login 
-    print("parsing logic data")
-    dfAOELogin = pd.DataFrame(asyncio.run(datarequest.AOELogin(URL, AOE_KEY, time)))
+    print("parsing login data")
+    dfAOELogin = asyncio.run(datarequest.AOELogin(URL, AOE_KEY, time))
     AOELoginGroup = [dfAOELogin, AOE_process_login]
-    print("parsed logic data")
+    print("parsed login data")
 
-    ## Process AOE cart updates
-    #print("parsing cart data")
-    #dfAOEUpdateCart = pd.DataFrame(asyncio.run(datarequest.AOEUpdateCart(URL, AOE_KEY, time)))
-    #AOEUpdateCartGroup = [dfAOEUpdateCart, AOE_process_update]
-    #print("parsed cart data")
+    # Process AOE cart updates
+    print("parsing update cart data")
+    dfAOEUpdateCart = asyncio.run(datarequest.AOEUpdateCart(URL, AOE_KEY, time))
+    AOEUpdateCartGroup = [dfAOEUpdateCart, AOE_process_update]
+    print("parsed update cart data")
 
     # Process AOE place order
-    #dfAOEPlaceOrder = pd.DataFrame(asyncio.run(datarequest.AOEPlaceOrder(URL, AOE_KEY, time)))
-    #AOEPlaceOrderGroup = [dfAOEPlaceOrder, AOE_process_placeorder]
+    print("parsing place order data")
+    dfAOEPlaceOrder = pd.DataFrame(asyncio.run(datarequest.AOEPlaceOrder(URL, AOE_KEY, time)))
+    AOEPlaceOrderGroup = [dfAOEPlaceOrder, AOE_process_placeorder]
+    print("parsed place order data")
 
 
-    asyncio.run(updateData(AOELoginGroup))
+    asyncio.run(updateData(AOELoginGroup, AOEUpdateCartGroup, AOEPlaceOrderGroup, AOETransactionGroup))
 
 
     while True: 
-        plt.pause(int(UPDATE_TIME)*60)
+        plt.pause(UPDATE_TIME)
 
-        ## Update AOE Transaction
-        #dfAOETransactionUpdate = pd.DataFrame(asyncio.run(datarequest.AOEGetTransactionThroughput(URL, AOE_KEY, UPDATE_TIME)))
-        #AOETransactionGroup[0] = pd.concat([dfAOETransaction, dfAOETransactionUpdate])
-        ## Process and store Transaction Data
-        #AOE_process_transaction.storeData(dfAOETransaction, "AOETransaction")
+        # Update AOE Transaction
+        dfAOETransactionUpdate = pd.DataFrame(asyncio.run(datarequest.AOEGetTransactionThroughput(URL, AOE_KEY, str(UPDATE_TIME))))
+        AOETransactionGroup[0] = pd.concat([AOETransactionGroup[0], dfAOETransactionUpdate])
+        # Process and store Transaction Data
+        AOE_process_transaction.storeData(dfAOETransaction, "AOETransaction")
 
         # Update the login data with new metrics
-        dfAOELoginUpdate = pd.DataFrame(asyncio.run(datarequest.AOELogin(URL, AOE_KEY, UPDATE_TIME)))
-        AOELoginGroup[0]= pd.concat([dfAOELogin, dfAOELoginUpdate])
+        dfAOELoginUpdate = pd.DataFrame(asyncio.run(datarequest.AOELogin(URL, AOE_KEY, str(UPDATE_TIME))))
+        AOELoginGroup[0]= pd.concat([AOELoginGroup[0], dfAOELoginUpdate])
         # Process Data, Store
-        #AOE_process_login.storeData(dfAOELogin, "AOELogin")
-        #SendData.sendMetric(str(AOE_KEY), "AOE Login", dfAOELogin)
+        AOE_process_login.storeData(dfAOELogin, "AOELogin")
 
         ## Update AOE cart updates 
-        #dfAOEUpdateCartUpdate = pd.DataFrame(asyncio.run(datarequest.AOEUpdateCart(URL, AOE_KEY, UPDATE_TIME)))
-        #AOEUpdateCartGroup[0] = pd.concat([dfAOEUpdateCart, dfAOEUpdateCartUpdate])
-        ### Process Data, Store
-        ##AOE_process_update.storeData(dfAOEUpdateCart, "AOEUpdateCart")
+        dfAOEUpdateCartUpdate = pd.DataFrame(asyncio.run(datarequest.AOEUpdateCart(URL, AOE_KEY, str(UPDATE_TIME))))
+        AOEUpdateCartGroup[0] = pd.concat([AOEUpdateCartGroup[0], dfAOEUpdateCartUpdate])
+        # Process Data, Store
+        AOE_process_update.storeData(dfAOEUpdateCart, "AOEUpdateCart")
 
         ## Update AOE place order
-        #dfAOEPlaceOrderUpdate = pd.DataFrame(asyncio.run(datarequest.AOEPlaceOrder(URL, AOE_KEY, UPDATE_TIME)))
-        #AOEPlaceOrderGroup[0] = pd.concat([dfAOEPlaceOrder, dfAOEPlaceOrderUpdate])
-        ## Process Data, Store
-        #AOE_process_placeorder.storeData(dfAOEPlaceOrder, "AOEPlaceOrder")
-        #asyncio.run(updateData(AOELoginGroup, AOEUpdateCartGroup))
+        dfAOEPlaceOrderUpdate = pd.DataFrame(asyncio.run(datarequest.AOEPlaceOrder(URL, AOE_KEY, str(UPDATE_TIME))))
+        AOEPlaceOrderGroup[0] = pd.concat([AOEPlaceOrderGroup[0], dfAOEPlaceOrderUpdate])
+        # Process Data, Store
+        AOE_process_placeorder.storeData(dfAOEPlaceOrder, "AOEPlaceOrder")
+
+        asyncio.run(updateData(AOELoginGroup, AOEUpdateCartGroup, AOEPlaceOrderGroup, AOETransactionGroup))
 

@@ -8,8 +8,8 @@ class Process:
 
     async def processDataFrame(self, df : pd.DataFrame):
 
-        maxsize = 100000 
-        df = df.head(maxsize)
+        #maxsize = 100000 
+        #df = df.head(maxsize)
         df = df.drop(df.columns.difference(["ds", "y"]), axis=1)
         print("____________________________________________________")
         print(df)

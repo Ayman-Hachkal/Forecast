@@ -21,10 +21,10 @@ async def Request(url, headers, query_payload, clean_data, sum_or_avg = 'avg'):
             df = df.rename(columns={'timestamp' : 'ds', clean_data :'y'})
             df = df.drop(df.columns.difference(["ds", "y"]), axis=1)
             if sum_or_avg == 'avg':
-                df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=False, axis=0)).mean()
+                df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=True, axis=0)).mean()
             elif sum_or_avg == 'sum':
-                df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=False, axis=0)).sum()
-            df = df.fillna(0).reset_index()
+                df = df.groupby(pd.Grouper(key='ds', freq='min', dropna=True, axis=0)).sum()
+            df = df.fillna(0)
             df = df.reset_index()
             return df
         except Exception: 
@@ -60,9 +60,9 @@ async def AOELogin(url: str, key, time: str):
         since_time += increment
         until_time += increment
 
-    results = await asyncio.gather(*queries)
-    df = pd.concat(results)
-    return df
+    results = pd.concat(await asyncio.gather(*queries))
+    print(results)
+    return results
 
 async def AOEUpdateCart(url: str, key, time: str):
     """requesting new relic aoe for login, add cart, order, and throughput"""
@@ -73,8 +73,8 @@ async def AOEUpdateCart(url: str, key, time: str):
 
     queries = []
     until_time = 0 
-    increment = 60
-    since_time = increment
+    increment = 480
+    since_time = increment + 1
     
     while (since_time < int(time)):
         print("AOE update cart: building query...")
@@ -82,7 +82,7 @@ async def AOEUpdateCart(url: str, key, time: str):
             "query": """{
               actor {
                 account(id: 1927050) {
-                  nrql(query: "FROM Transaction SELECT * WHERE name = 'WebTransaction/Action/Webapi/Rest/Acquia\\\\\\CommerceManager\\\\\\Api\\\\\\CartManagementInterface/updateCart' LIMIT MAX SINCE """ + time + """ minute ago", async: true) {
+                  nrql(query: "FROM Transaction SELECT * WHERE name = 'WebTransaction/Action/Webapi/Rest/Acquia\\\\\\CommerceManager\\\\\\Api\\\\\\CartManagementInterface/updateCart' LIMIT MAX SINCE """ + str(since_time)+ """ minute ago UNTIL """ + str(until_time) + """ minute ago", async: true) {
                     results
                   }
                 }
@@ -94,9 +94,8 @@ async def AOEUpdateCart(url: str, key, time: str):
         since_time += increment
         until_time += increment
 
-    results = await asyncio.gather(*queries)
-    df = pd.concat(results)
-    return df
+    results = pd.concat(await asyncio.gather(*queries))
+    return results
 
 
 async def AOEPlaceOrder(url: str, key, time : str):
@@ -116,7 +115,7 @@ async def AOEPlaceOrder(url: str, key, time : str):
             "query": """{
               actor {
                 account(id: 1927050) {
-                  nrql(query: "FROM Transaction SELECT * WHERE name = 'WebTransaction/Action/Webapi/Rest/Acquia\\\\\\CommerceManager\\\\\\Api\\\\\\CartManagementInterface/updateCart' LIMIT MAX SINCE """ + time + """ minute ago", async: true) {
+                  nrql(query: "FROM Transaction SELECT * WHERE name = 'WebTransaction/Action/Webapi/Rest/Acquia\\\\\\CommerceManager\\\\\\Api\\\\\\CartManagementInterface/updateCart' LIMIT MAX SINCE """ + str(since_time)+ """ minute ago UNTIL """ + str(until_time) + """ minute ago", async: true) {
                     results
                   }
                 }
@@ -150,7 +149,7 @@ async def AOEGetTransactionThroughput(url: str, key, time: str):
             "query": """{
               actor {
                 account(id: 1927050){
-                  nrql(query: "FROM Metric SELECT * WHERE dataType='APM Agent API transaction events' and metricName = 'newrelic.resourceConsumption.currentValue' LIMIT MAX SINCE """ + time + """ minute ago", async: true) {
+                  nrql(query: "FROM Metric SELECT * WHERE dataType='APM Agent API transaction events' and metricName = 'newrelic.resourceConsumption.currentValue' LIMIT MAX SINCE """ + str(since_time)+ """ minute ago UNTIL """ + str(until_time) + """ minute ago", async: true) {
                     results
                   }
                 }
@@ -181,7 +180,7 @@ async def AOEGetCart(url: str, key: str, time: str):
         query_payload = {
             "query": """{
               actor { account(id: 1927050) {
-                  nrql(query: "FROM Transaction SELECT * WHERE name = 'WebTransaction/Action/Webapi/Rest/Acquia\\\\\\CommerceManager\\\\\\Api\\\\\\CartManagementInterface/getCartForGuest' or name = 'WebTransaction/Action/Webapi/Rest/Acquia\\\\\\CommerceManager\\\\\\Api\\\\\\CartManagementInterface/getCartForCustomer' LIMIT MAX SINCE """ + time + """ minute ago", async: true) {
+                  nrql(query: "FROM Transaction SELECT * WHERE name = 'WebTransaction/Action/Webapi/Rest/Acquia\\\\\\CommerceManager\\\\\\Api\\\\\\CartManagementInterface/getCartForGuest' or name = 'WebTransaction/Action/Webapi/Rest/Acquia\\\\\\CommerceManager\\\\\\Api\\\\\\CartManagementInterface/getCartForCustomer' LIMIT MAX SINCE """ + str(since_time)+ """ minute ago UNTIL """ + str(until_time) + """ minute ago", async: true) {
                     results
                   }
                 }

@@ -98,22 +98,17 @@ class Forecast:
 
         # Calculate Root Mean Square Error (RMSE) for train and test sets
         train_RMSE = np.sqrt(mean_squared_error(train_data['y'], train_data_forecast['yhat']))
-        train_standard_deviation = np.std(train_data['y'])
-        train_mean = np.mean(train_data['y'])
 
         train_range = (np.max(np.array(train_data['y'].values)) - np.min(np.array(train_data['y'].values)))
 
         test_RMSE = np.sqrt(mean_squared_error(test_data['y'], test_data_forecast['yhat']))
-        test_standard_deviation = np.std(test_data['y'] )
 
         # Determine the peak value in the test data for context
         test_range = (np.max(np.array(test_data['y'].values)) - np.min(np.array(test_data['y'].values)))
 
-        test_mean = np.mean(train_data['y'])
 
         train_NRMSE = train_RMSE / train_range 
         test_NRMSE = test_RMSE / test_range 
-        
         
         # Calculate Mean Absolute Percentage Error (MAPE)
         mape = np.mean(np.abs((np.array(test_data['y'].values) - np.array(test_data_forecast['yhat'].values)) / np.array(test_data['y'].notnull().values))) * 100
